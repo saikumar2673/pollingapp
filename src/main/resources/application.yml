@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: polling-platform
+  datasource:
+    url: ${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=polling_platform;encrypt=true;trustServerCertificate=true}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:Welcome@123}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServerDialect
+        format_sql: true
+  thymeleaf:
+    cache: false
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      timeout: 30m
+
+logging:
+  level:
+    org.hibernate.SQL: warn
