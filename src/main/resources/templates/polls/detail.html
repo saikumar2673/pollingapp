@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${poll.title}">Poll</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/voting.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+    <a href="/polls" class="brand">Polling Platform</a>
+    <nav>
+        <a href="/polls">Public feed</a>
+        <a href="/polls/my">My polls</a>
+        <a href="/polls/shared">Shared with me</a>
+        <a href="/polls/new">New poll</a>
+        <span class="user-badge" th:if="${currentUserName}" th:text="${currentUserName}">User</span>
+        <form method="post" action="/logout" class="inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="link-button">Sign out</button>
+        </form>
+    </nav>
+</header>
+<main class="container">
+    <section class="detail-head">
+        <div>
+            <h1 th:text="${poll.title}">Poll title</h1>
+            <p th:if="${poll.description}" th:text="${poll.description}">Description</p>
+            <div class="meta">
+                <span th:text="${poll.status}">OPEN</span>
+                <span th:text="${poll.type == T(com.example.polling.poll.PollType).SINGLE_CHOICE ? 'Single choice' : 'Multi choice'}">Type</span>
+                <span th:text="${poll.visibility}">PUBLIC</span>
+            </div>
+        </div>
+        <div class="share-box">
+            <input id="shareUrl" readonly th:value="${shareUrl}">
+            <button type="button" data-copy-share>Copy URL</button>
+        </div>
+    </section>
+
+    <section th:if="${creator}" class="owner-panel">
+        <h2>Creator controls</h2>
+        <div class="actions">
+            <a th:if="${poll.draft}" class="button" th:href="@{/polls/{token}/edit(token=${poll.shareToken})}">Edit draft</a>
+            <form th:if="${poll.open}" method="post" th:action="@{/polls/{token}/close(token=${poll.shareToken})}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit">Close poll</button>
+            </form>
+        </div>
+        <form th:if="${poll.open}" method="post" th:action="@{/polls/{token}/end-at(token=${poll.shareToken})}" class="filters">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <label>Extend closing time <input type="datetime-local" name="endAt"></label>
+            <button type="submit">Update</button>
+        </form>
+    </section>
+
+    <section th:if="${poll.open}" class="vote-panel">
+        <h2>Your vote</h2>
+        <form method="post" th:action="@{/polls/{token}/vote(token=${poll.shareToken})}" class="stack">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <label class="choice" th:each="option : ${poll.options}">
+                <input th:type="${poll.type == T(com.example.polling.poll.PollType).SINGLE_CHOICE ? 'radio' : 'checkbox'}"
+                       name="optionIds"
+                       th:value="${option.id}"
+                       th:checked="${currentSelectionIds.contains(option.id)}">
+                <span th:text="${option.label}">Option</span>
+            </label>
+            <div class="actions">
+                <button type="submit">Submit vote</button>
+            </div>
+        </form>
+        <form th:if="${hasVoted}" method="post" th:action="@{/polls/{token}/withdraw(token=${poll.shareToken})}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="secondary">Withdraw vote</button>
+        </form>
+    </section>
+
+    <section th:if="${!poll.open}" class="notice-panel">
+        <p th:text="${poll.draft ? 'This poll is still a draft and cannot accept votes.' : 'This poll is closed. Results are frozen.'}">Status</p>
+    </section>
+
+    <section class="results-panel">
+        <h2>Results</h2>
+        <div th:if="${canSeeResults}">
+            <p><strong th:text="${results.totalRespondents()}">0</strong> total respondents</p>
+            <p th:if="${poll.type == T(com.example.polling.poll.PollType).MULTI_CHOICE}" class="notice">
+                Multi-choice percentages are calculated against total respondents, so they may add up to more than 100%.
+            </p>
+            <div class="result-row" th:each="option : ${results.options()}">
+                <div class="result-label">
+                    <span th:text="${option.label()}">Option</span>
+                    <span th:text="${option.count()} + ' votes - ' + ${#numbers.formatDecimal(option.percentage(), 1, 1)} + '%'">0 votes</span>
+                </div>
+                <div class="bar"><span th:style="'width:' + ${option.percentage()} + '%'"></span></div>
+            </div>
+        </div>
+        <p th:unless="${canSeeResults}" class="notice-panel">Vote to see results. The creator can always see results, and everyone with access can see them after the poll closes.</p>
+    </section>
+
+    <section th:if="${creator && poll.private}" class="owner-panel">
+        <h2>Invitations</h2>
+        <p th:if="${poll.closed}" class="notice">This poll is closed. Existing invitees keep access to results, and invitations can no longer be revoked.</p>
+        <form th:if="${!poll.closed}" method="post" th:action="@{/polls/{token}/invitations(token=${poll.shareToken})}" class="filters">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <label>User email <input type="email" name="email" required></label>
+            <button type="submit">Invite</button>
+        </form>
+        <table>
+            <thead><tr><th>User</th><th>Invited at</th><th>Invited by</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="invitation : ${invitations}">
+                <td th:text="${invitation.invitedUser.name} + ' (' + ${invitation.invitedUser.email} + ')'">User</td>
+                <td th:text="${invitation.invitedAt}">Date</td>
+                <td th:text="${invitation.invitedBy.name}">Creator</td>
+                <td>
+                    <form th:if="${!poll.closed}" method="post" th:action="@{/polls/{token}/invitations/{id}/revoke(token=${poll.shareToken},id=${invitation.id})}">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button type="submit" class="danger secondary">Revoke</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

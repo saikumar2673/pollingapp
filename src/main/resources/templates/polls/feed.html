@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Polls</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <a href="/polls" class="brand">Polling Platform</a>
+    <nav>
+        <a href="/polls">Public feed</a>
+        <a href="/polls/my">My polls</a>
+        <a href="/polls/shared">Shared with me</a>
+        <a href="/polls/new">New poll</a>
+        <span class="user-badge" th:if="${currentUserName}" th:text="${currentUserName}">User</span>
+        <form method="post" action="/logout" class="inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="link-button">Sign out</button>
+        </form>
+    </nav>
+</header>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1 th:text="${view == 'my' ? 'My polls' : (view == 'shared' ? 'Shared with me' : 'Public feed')}">Polls</h1>
+            <p th:if="${view == 'feed'}">Public open and closed polls visible to all authenticated users.</p>
+            <p th:if="${view == 'my'}">Your drafts, open polls, and closed polls.</p>
+            <p th:if="${view == 'shared'}">Private open and closed polls where you are currently invited.</p>
+        </div>
+        <a class="button" href="/polls/new">Create poll</a>
+    </div>
+
+    <form th:if="${view == 'feed'}" method="get" action="/polls" class="filters">
+        <label>Status
+            <select name="status">
+                <option value="" th:selected="${status == null}">Open and closed</option>
+                <option value="OPEN" th:selected="${status?.name() == 'OPEN'}">Open</option>
+                <option value="CLOSED" th:selected="${status?.name() == 'CLOSED'}">Closed</option>
+            </select>
+        </label>
+        <label>Sort
+            <select name="sort">
+                <option value="createdAt" th:selected="${sort == 'createdAt'}">Created date</option>
+                <option value="endAt" th:selected="${sort == 'endAt'}">End date</option>
+                <option value="respondents" th:selected="${sort == 'respondents'}">Respondents</option>
+            </select>
+        </label>
+        <label>Direction
+            <select name="dir">
+                <option value="desc" th:selected="${dir == 'desc'}">Descending</option>
+                <option value="asc" th:selected="${dir == 'asc'}">Ascending</option>
+            </select>
+        </label>
+        <button type="submit">Apply</button>
+    </form>
+
+    <section class="list">
+        <article class="poll-row" th:each="poll : ${polls.content}">
+            <div>
+                <h2><a th:href="@{/polls/{token}(token=${poll.shareToken})}" th:text="${poll.title}">Poll title</a></h2>
+                <p th:text="${poll.description ?: 'No description'}">Description</p>
+                <div class="meta">
+                    <span th:text="${poll.status}">OPEN</span>
+                    <span th:text="${poll.visibility}">PUBLIC</span>
+                    <span th:text="${respondentCounter.respondentCount(poll)} + ' respondents'">0 respondents</span>
+                </div>
+            </div>
+            <a class="button secondary" th:href="@{/polls/{token}(token=${poll.shareToken})}">Open</a>
+        </article>
+        <p th:if="${polls.totalElements == 0}" class="empty">No polls to show.</p>
+    </section>
+
+    <nav class="pagination" th:if="${polls.totalPages > 1}">
+        <a th:if="${polls.hasPrevious()}" th:href="@{${listPath}(page=${polls.number - 1},status=${status},sort=${sort},dir=${dir})}">Previous</a>
+        <span th:text="'Page ' + (${polls.number} + 1) + ' of ' + ${polls.totalPages}">Page</span>
+        <a th:if="${polls.hasNext()}" th:href="@{${listPath}(page=${polls.number + 1},status=${status},sort=${sort},dir=${dir})}">Next</a>
+    </nav>
+</main>
+</body>
+</html>

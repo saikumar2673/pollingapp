@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${mode == 'edit' ? 'Edit poll' : 'Create poll'}">Poll form</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/polls.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+    <a href="/polls" class="brand">Polling Platform</a>
+    <nav>
+        <a href="/polls">Public feed</a>
+        <a href="/polls/my">My polls</a>
+        <a href="/polls/shared">Shared with me</a>
+        <span class="user-badge" th:if="${currentUserName}" th:text="${currentUserName}">User</span>
+        <form method="post" action="/logout" class="inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="link-button">Sign out</button>
+        </form>
+    </nav>
+</header>
+<main class="container narrow">
+    <h1 th:text="${mode == 'edit' ? 'Edit draft poll' : 'Create poll'}">Create poll</h1>
+    <p th:if="${param.created}" class="notice-panel">Draft saved. Click Publish when you want other eligible users to see and vote on this poll.</p>
+    <form method="post" th:action="${mode == 'edit'} ? @{/polls/{token}/edit(token=${poll.shareToken})} : @{/polls}" th:object="${form}" class="stack">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <label>Title <input th:field="*{title}" required maxlength="200"></label>
+        <label>Description <textarea th:field="*{description}" rows="4"></textarea></label>
+        <div class="grid-2">
+            <label>Type
+                <select th:field="*{type}">
+                    <option value="SINGLE_CHOICE">Single choice</option>
+                    <option value="MULTI_CHOICE">Multi choice</option>
+                </select>
+            </label>
+            <label>Visibility
+                <select th:field="*{visibility}">
+                    <option value="PUBLIC">Public</option>
+                    <option value="PRIVATE">Private</option>
+                </select>
+            </label>
+        </div>
+        <label>Results visibility
+            <select th:field="*{resultsVisibility}">
+                <option value="ALWAYS_VISIBLE">Always visible</option>
+                <option value="VISIBLE_AFTER_VOTING">Visible after voting</option>
+            </select>
+        </label>
+        <label>Optional closing time <input type="datetime-local" th:field="*{endAt}"></label>
+
+        <section>
+            <div class="section-head">
+                <h2>Options</h2>
+                <button type="button" class="secondary" data-add-option>Add option</button>
+            </div>
+            <div id="options">
+                <div class="option-input" th:each="option, iter : *{options}">
+                    <input name="options" th:value="${option}" required placeholder="Option label">
+                    <button type="button" class="danger secondary" data-remove-option>Remove</button>
+                </div>
+            </div>
+        </section>
+
+        <div class="actions">
+            <button type="submit">Save draft</button>
+            <a class="button secondary" href="/polls/my">Cancel</a>
+        </div>
+    </form>
+
+    <div th:if="${mode == 'edit'}" class="actions split">
+        <form method="post" th:action="@{/polls/{token}/publish(token=${poll.shareToken})}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit">Publish</button>
+        </form>
+        <form method="post" th:action="@{/polls/{token}/delete(token=${poll.shareToken})}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="danger">Delete draft</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

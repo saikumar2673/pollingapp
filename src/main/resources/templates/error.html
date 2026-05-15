@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title}">Error</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <a href="/polls" class="brand">Polling Platform</a>
+    <nav>
+        <span class="user-badge" th:if="${currentUserName}" th:text="${currentUserName}">User</span>
+    </nav>
+</header>
+<main class="container narrow">
+    <h1 th:text="${title}">Error</h1>
+    <p class="error-panel" th:text="${message}">Something went wrong.</p>
+    <a href="/polls">Back to public feed</a>
+</main>
+</body>
+</html>
