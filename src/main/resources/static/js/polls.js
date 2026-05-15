@@ -1,4 +1,10 @@
 document.addEventListener("click", (event) => {
+    const row = event.target.closest("[data-href]");
+    if (row && !event.target.closest("a, button, input, select, textarea, form")) {
+        window.location.href = row.dataset.href;
+        return;
+    }
+
     const addButton = event.target.closest("[data-add-option]");
     if (addButton) {
         const options = document.querySelector("#options");
@@ -15,4 +21,13 @@ document.addEventListener("click", (event) => {
             removeButton.closest(".option-input").remove();
         }
     }
+});
+
+document.addEventListener("keydown", (event) => {
+    const row = event.target.closest("[data-href]");
+    if (!row || (event.key !== "Enter" && event.key !== " ")) {
+        return;
+    }
+    event.preventDefault();
+    window.location.href = row.dataset.href;
 });

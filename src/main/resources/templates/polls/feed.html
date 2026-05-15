@@ -57,7 +57,7 @@
     </form>
 
     <section class="list">
-        <article class="poll-row" th:each="poll : ${polls.content}">
+        <article class="poll-row clickable-row" th:each="poll : ${polls.content}" th:data-href="@{/polls/{token}(token=${poll.shareToken})}" tabindex="0">
             <div>
                 <h2><a th:href="@{/polls/{token}(token=${poll.shareToken})}" th:text="${poll.title}">Poll title</a></h2>
                 <p th:text="${poll.description ?: 'No description'}">Description</p>

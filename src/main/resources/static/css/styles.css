@@ -368,6 +368,16 @@ button:active,
     box-shadow: var(--shadow);
 }
 
+.clickable-row {
+    cursor: pointer;
+}
+
+.clickable-row:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14), var(--shadow-sm);
+    outline: none;
+}
+
 .poll-row h2 {
     margin-bottom: 5px;
 }
